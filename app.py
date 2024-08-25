@@ -4,7 +4,6 @@
 # Version: 1.0.0.
 # Usage: python app.py
 
-# Modified by Kye, https://github.com/KyeOnDiscord
 
 # Import the necessary libraries.
 # Playwright is used to crawl the Facebook Marketplace.
@@ -130,18 +129,18 @@ def crawl_facebook_marketplace(city: str, query: str, max_price: int):
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         # Navigate to the URL.
-       # page.goto(initial_url)
-        # Wait for the page to load.
-        #time.sleep(2)
-        # try:
-        #     email_input = page.wait_for_selector('input[name="email"]').fill('YOUR_EMAIL_HERE')
-        #     password_input = page.wait_for_selector('input[name="pass"]').fill('YOUR_PASSWORD_HERE')
-        #     time.sleep(2)
-        #     login_button = page.wait_for_selector('button[name="login"]').click()
-        #     time.sleep(2)
-        #     page.goto(marketplace_url)
-        # except:
-        page.goto(marketplace_url)
+        page.goto(initial_url)
+        #Wait for the page to load.
+        time.sleep(2)
+        try:
+            email_input = page.wait_for_selector('input[name="email"]').fill('YOUR_EMAIL_HERE')
+            password_input = page.wait_for_selector('input[name="pass"]').fill('YOUR_PASSWORD_HERE')
+            time.sleep(2)
+            login_button = page.wait_for_selector('button[name="login"]').click()
+            time.sleep(2)
+            page.goto(marketplace_url)
+        except:
+            page.goto(marketplace_url)
         # Wait for the page to load.
         time.sleep(2)
         # Infinite scroll to the bottom of the page until the loop breaks.
