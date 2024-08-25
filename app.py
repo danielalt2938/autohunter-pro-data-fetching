@@ -21,7 +21,7 @@ import json
 # The uvicorn library is used to run the API.
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-                 
+import requests
 # Create an instance of the FastAPI class.
 app = FastAPI()
 # Configure CORS
@@ -211,44 +211,14 @@ def crawl_facebook_marketplace(city: str, query: str, max_price: int):
 @app.get("/return_ip_information")
 # Define a function to be executed when the endpoint is called.
 def return_ip_information():
-    # Initialize the session using Playwright.
-    with sync_playwright() as p:
-        # Open a new browser page.
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        # Navigate to the URL.
-        page.goto('https://www.ipburger.com/')
-        # Wait for the page to load.
-        time.sleep(5)
-        # Get the HTML content of the page.
-        html = page.content()
-        # Beautify the HTML content.
-        soup = BeautifulSoup(html, 'html.parser')
-        # Find the IP address.
-        ip_address = soup.find('span', id='ipaddress1').text
-        # Find the country.
-        country = soup.find('strong', id='country_fullname').text
-        # Find the location.
-        location = soup.find('strong', id='location').text
-        # Find the ISP.
-        isp = soup.find('strong', id='isp').text
-        # Find the Hostname.
-        hostname = soup.find('strong', id='hostname').text
-        # Find the Type.
-        ip_type = soup.find('strong', id='ip_type').text
-        # Find the version.
-        version = soup.find('strong', id='version').text
-        # Close the browser.
-        browser.close()
         # Return the IP information as JSON.
+        data = requests.get("http://ip-api.com/json/?fields=66846719").json()
         return {
-            'ip_address': ip_address,
-            'country': country,
-            'location': location,
-            'isp': isp,
-            'hostname': hostname,
-            'type': ip_type,
-            'version': version
+            'ip_address': data['query'],
+            'country': data['country'],
+            'location': data['city'] + ', ' + data['regionName'],
+            'isp': data['isp'],
+            'proxy': data['proxy'],
         }
 
 if __name__ == "__main__":
