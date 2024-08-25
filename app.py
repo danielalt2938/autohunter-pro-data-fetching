@@ -61,6 +61,7 @@ def crawl_facebook_marketplace(city: str, query: str, max_price: int):
     # https://m.facebook.com/marketplace/directory/US/?_se_imp=0oey5sMRMSl7wluQZ
     # TODO - Add more cities to the dictionary.
     cities = {
+        'Melbourne': 'melbourne',
         'New York': 'nyc',
         'Los Angeles': 'la',
         'Las Vegas': 'vegas',
@@ -149,51 +150,51 @@ def crawl_facebook_marketplace(city: str, query: str, max_price: int):
         #     time.sleep(2)
         html = page.content()
         soup = BeautifulSoup(html, 'html.parser')
+         # Close the browser.
+        browser.close()
         parsed = []
         
         heading = soup.find(attrs={"aria-label": "Collection of Marketplace items"})
         child1 = next(heading.children)
         child2 = next(child1.children)
-        grid_parent = list(child2.children)[2]
-        grid_child1 = next(grid_parent.children)
-        grid_child2 = list(grid_child1.children)[1] # the actual grid container
-        listings = list(grid_child2.children)
-       # headingchild2 = list(headingchild1.children)[0] # x1xfsgkm xqmdsaz x1cnzs8 x4v5mdz xjfs22q
+        grid_parent = list(child2.children)[2] # groups of listings
+        for group in grid_parent.children:
+            grid_child2 = list(group.children)[1] # the actual grid container
+            listings = list(grid_child2.children)
         
-        for listing in listings:
-            try:
-                child1 = next(listing.children)
-                child2 = next(child1.children)
-                child3 = next(child2.children) # span class class="x1lliihq x1iyjqo2"
-                child4 = next(child3.children) # div
-                child5 = next(child4.children) # div class="x78zum5 xdt5ytf"
-                child5 = next(child5.children) # div class="x9f619 x1n2onr6 x1ja2u2z" 
-                child6 = next(child5.children) # div class="x3ct3a4" (real data here)
-                atag = next(child6.children) # a tag
-                post_url = atag['href']
-                atag_child1 = next(atag.children)
-                atag_child2 = list(atag_child1.children) # 2 divs here
-                # Get the item image.
-                image = listing.find('img')['src']
-                
-                details = list(atag_child2[1].children) # x9f619 x78zum5 xdt5ytf x1qughib x1rdy4ex xz9dl7a xsag5q8 xh8yej3 xp0eagm x1nrcals
-                # There are 4 divs in 'details', in this order: price, title, location, distance
-                price = details[0].contents[-1].text
-                title = details[1].contents[-1].text
-                location = details[2].contents[-1].text
-                #distance = details[3].contents[-1].text
+            for listing in listings:
+                try:
+                    child1 = next(listing.children)
+                    child2 = next(child1.children)
+                    child3 = next(child2.children) # span class class="x1lliihq x1iyjqo2"
+                    child4 = next(child3.children) # div
+                    child5 = next(child4.children) # div class="x78zum5 xdt5ytf"
+                    child5 = next(child5.children) # div class="x9f619 x1n2onr6 x1ja2u2z" 
+                    child6 = next(child5.children) # div class="x3ct3a4" (real data here)
+                    atag = next(child6.children) # a tag
+                    post_url = atag['href']
+                    atag_child1 = next(atag.children)
+                    atag_child2 = list(atag_child1.children) # 2 divs here
+                    # Get the item image.
+                    image = listing.find('img')['src']
+                    
+                    details = list(atag_child2[1].children) # x9f619 x78zum5 xdt5ytf x1qughib x1rdy4ex xz9dl7a xsag5q8 xh8yej3 xp0eagm x1nrcals
+                    # There are 4 divs in 'details', in this order: price, title, location, distance
+                    price = details[0].contents[-1].text
+                    title = details[1].contents[-1].text
+                    location = details[2].contents[-1].text
+                    #distance = details[3].contents[-1].text
 
-                parsed.append({
-                    'image': image,
-                    'title': title,
-                    'price': price,
-                    'post_url': post_url,
-                    'location': location
-                })
-            except:
-                pass
-        # Close the browser.
-        browser.close()
+                    parsed.append({
+                        'image': image,
+                        'title': title,
+                        'price': price,
+                        'post_url': post_url,
+                        'location': location
+                    })
+                except:
+                    pass
+       
         # Return the parsed data as a JSON.
         result = []
         for item in parsed:
