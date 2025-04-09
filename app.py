@@ -57,7 +57,7 @@ def root():
 # Define a function to be executed when the endpoint is called.
 # Add a description to the function.
 def crawl_facebook_marketplace(city: str, query: str, max_price: int):
-    # Define dictionary of cities from the facebook marketplace directory for United States.
+    # Define dictionary of cities from the facebook m arketplace directory for United States.
     # https://m.facebook.com/marketplace/directory/US/?_se_imp=0oey5sMRMSl7wluQZ
     # TODO - Add more cities to the dictionary.
     cities = {
