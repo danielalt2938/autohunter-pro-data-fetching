@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "apify-client": "^2.12.1",
+    "firebase-admin": "^13.2.0"
+  }
+}
