@@ -133,8 +133,8 @@ def crawl_facebook_marketplace(city: str, query: str, max_price: int):
         # Wait for the page to load.
         time.sleep(2)
         try:
-            email_input = page.wait_for_selector('input[name="email"]').fill('YOUR_EMAIL_HERE')
-            password_input = page.wait_for_selector('input[name="pass"]').fill('YOUR_PASSWORD_HERE')
+            email_input = page.wait_for_selector('input[name="email"]').fill('alred487@gmail.com')
+            password_input = page.wait_for_selector('input[name="pass"]').fill('handBOOK98')
             time.sleep(2)
             login_button = page.wait_for_selector('button[name="login"]').click()
             time.sleep(2)
