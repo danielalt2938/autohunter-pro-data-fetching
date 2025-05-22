@@ -7,3 +7,15 @@
 4- Install XVFB 
     sudo apt-get install xvfb
 
+
+Install python virtual env:
+
+`python3 -m venv libs`
+
+`source libs/bin/activate`
+
+
+
+Run command:
+
+xvfb run -a python main_profiles.py
