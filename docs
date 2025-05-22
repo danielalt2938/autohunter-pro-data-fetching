@@ -1,0 +1,9 @@
+1- Install python virtual env
+2- Install requirements 
+    pip install -r requirements.txt
+3- Install Google Chrome
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    sudo apt install ./google-chrome*.deb
+4- Install XVFB 
+    sudo apt-get install xvfb
+
