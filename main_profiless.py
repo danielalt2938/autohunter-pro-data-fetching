@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
+from selenium.common.exceptions import StaleElementReferenceException
 import os
 import time
 import random
@@ -72,9 +72,9 @@ class fbm_scraper():
 
         """
         if proxy != None:
-            self.browser = Driver(browser="chrome", uc=True, headless1=headless, proxy=proxy, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
+            self.browser = Driver(browser="chrome",block_images=False,uc=True, headless1=headless, proxy=proxy, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
         else:
-            self.browser = Driver(browser="chrome", uc=True, headless1=headless, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
+            self.browser = Driver(browser="chrome",block_images=False, uc=True, headless1=headless, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
 
         self.browser.maximize_window()
         self.checkpoint = [x.replace(".json", "") for x in os.listdir(f"{dir_path}/publications/")]
@@ -366,14 +366,8 @@ class fbm_scraper():
 
         #try: # Some vehicles may have a short description, no need to click on "See more"
         see_more = self.browser.find_elements(By.XPATH, "//*[contains(text(), 'See more')]")
+        see_more.pop(0)
         for x in see_more:
-            try:
-                if "marketplace/directory/US" in x.get_attribute("href"):
-                    continue
-                self.browser.execute_script("arguments[0].click();", x)
-            except:
-                None
-            
             self.browser.execute_script("arguments[0].click();", x)
             time.sleep(0.5)
         #except Exception as e:
@@ -448,7 +442,7 @@ if __name__ == "__main__":
         if not os.path.exists(f"{dir_path}/images/{city_code}"):
             os.makedirs(f"{dir_path}/images/{city_code}")
 
-        headless = True
+        headless = False
         worker = fbm_scraper(city_code, proxy, threshold, headless, False)
         worker.execute_scrap_process()
 
