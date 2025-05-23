@@ -18,4 +18,4 @@ Install python virtual env:
 
 Run command:
 
-xvfb run -a python main_profiles.py
+xvfb-run -a python main_profiless.py
