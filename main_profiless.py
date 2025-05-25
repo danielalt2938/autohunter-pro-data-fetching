@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.common.exceptions import StaleElementReferenceException
+
 import os
 import time
 import random
@@ -44,9 +44,6 @@ INTERIOR_EXTERIOR_COLOR = "background-position: -84px -21px;"
 CONSUMPTION = "background-position: -84px -63px;"
 DEBT = "background-position: -84px -63px;"
 TITLE = "background-position: -84px -105px;"
-OWNERS = 'background-position: -21px -181px;'
-PAID_OFF = 'background-position: 0px 0px;'
-CLEAN_TITLE = 'background-position: -63px -105px;'
 
 abs_path = os.path.abspath(__file__)
 dir_path = os.path.dirname(abs_path)
@@ -72,11 +69,10 @@ class fbm_scraper():
 
         """
         if proxy != None:
-            self.browser = Driver(browser="chrome",block_images=False,uc=True, headless1=headless, proxy=proxy, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
+            self.browser = Driver(browser="chrome", headless=headless, proxy=proxy, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
         else:
-            self.browser = Driver(browser="chrome",block_images=False, uc=True, headless1=headless, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
+            self.browser = Driver(browser="chrome", headless=headless, agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
 
-        self.browser.maximize_window()
         self.checkpoint = [x.replace(".json", "") for x in os.listdir(f"{dir_path}/publications/")]
         self.links = {}
 
@@ -90,6 +86,7 @@ class fbm_scraper():
         log_file = os.path.join(dir_path, "scraper.log")
         with open(log_file, "a") as f:
             f.write(log_message)
+        self.browser.save_screenshot("screenshot.png")
 
     def print_and_log(self, message):
         self.log(message)
@@ -111,16 +108,9 @@ class fbm_scraper():
             self.links[product_id] = product_href.get_attribute('href')
 
     def process_login_block(self):
+        self.print_and_log(f"{self.city_code} INFO: Running login block check.")
         try:
-            cookies_buttons = self.browser.find_elements(By.XPATH, "//span[contains(text(), 'Allow all cookies')]")
-            for button in cookies_buttons:
-                self.browser.execute_script("arguments[0].click();", button)
-            self.login_blocks += 1
-            self.print_and_log(f"{self.city_code} INFO: Login block found and closed. Total login blocks: ", self.login_blocks)
-        except:
-            self.print_and_log(f"{self.city_code} INFO: No login block found.")
-            
-        try:
+            login_block = WebDriverWait(self.browser, 5).until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Email')]")))
             close_button = self.browser.find_element(By.XPATH, "//div[contains(@aria-label, 'Close')]")
             self.browser.execute_script("arguments[0].click();", close_button)
             self.login_blocks += 1
@@ -138,7 +128,7 @@ class fbm_scraper():
         recorded_heights = []
         while True:
             random_pixels = random.randint(600, 1300)
-            random_wait = random.uniform(1.5,3.0)
+            random_wait = random.uniform(1,2.0)
             total_scroll += random_pixels
             # Scroll down to the bottom of the page to load all items.
             self.browser.execute_script(
@@ -149,7 +139,7 @@ class fbm_scraper():
             
             self.process_login_block()
 
-            time.sleep(random_wait)
+
             if len(recorded_heights) > 1 and all(recorded_heights[-i] == recorded_heights[-i-1] for i in range(1, min(len(recorded_heights), 5))):
                 self.print_and_log(f"{self.city_code} INFO: No more items to load, starting the scrap.")
                 self.print_and_log(f"{self.city_code} INFO: Got {len(self.links)} items to scrap, but threshold was {self.threshold}.")
@@ -163,7 +153,7 @@ class fbm_scraper():
                     self.print_and_log(f"{self.city_code} WARNING: No more links found or the page has changed during the scroll process.")
                     return
 
-                
+                time.sleep(random_wait)
     
     def scrap_images(self, publication_id):
         image_elements = self.browser.find_elements(By.XPATH, PRODUCT_IMAGE_XPATH)
@@ -259,11 +249,14 @@ class fbm_scraper():
                     vehicle_info["exterior_color"] = exterior_color.strip()
 
                 elif FUEL_TYPE_AND_TRANSMISSION in style_attribute:
-                    style_text = element.find_element(By.XPATH, "../..").text
-                    if "transmission" in style_text:
-                        vehicle_info["transmission"] = style_text.split("\n")[0].replace(" transmission ", "").strip()
+                    if "transmission" in style_attribute:
+                        parent_element = element.find_element(By.XPATH, "..")
+                        grandparent_element = parent_element.find_element(By.XPATH, "..")
+                        vehicle_info["transmission"] = grandparent_element.text.split("\n")[0].replace(" transmission ", "").strip()
                     else:
-                        vehicle_info["fuel_type"] = style_text.split("\n")[0].replace("Fuel type: ", "")
+                        parent_element = element.find_element(By.XPATH, "..")
+                        grandparent_element = parent_element.find_element(By.XPATH, "..")
+                        vehicle_info["fuel_type"] = grandparent_element.text.split("\n")[0].replace("Fuel type: ", "")
 
                 elif CONSUMPTION in style_attribute:
                     parent_element = element.find_element(By.XPATH, "..")
@@ -272,30 +265,17 @@ class fbm_scraper():
                     highway_consumption = float(grandparent_element.text.split("\n")[0].split("·")[1].replace(" MPG highway", "").strip())
                     vehicle_info["consumption"] = {"city": city_consumption, "highway": highway_consumption}
                 
-                elif OWNERS in style_attribute:
-                    style_text = element.find_element(By.XPATH, "../..").text
-                    if style_text != "":
-                        vehicle_info["owners"] = style_text
-
                 elif DEBT in style_attribute:
                     parent_element = element.find_element(By.XPATH, "..")
                     grandparent_element = parent_element.find_element(By.XPATH, "..")
                     vehicle_info["debt"] = grandparent_element.text.split("\n")[0].strip()
-
-                
-                elif CLEAN_TITLE in style_attribute:
-                    vehicle_info["clean_title"] = True
-
-                elif PAID_OFF in style_attribute:
-                    vehicle_info["misc"] = "Paid off"
-
                 
                 elif TITLE in style_attribute:
                     parent_element = element.find_element(By.XPATH, "..")
                     grandparent_element = parent_element.find_element(By.XPATH, "..")
                     vehicle_info["title"] = grandparent_element.text.split("\n")[0].replace(" title", "").strip()
             except Exception as e:
-                print(e)
+                None
         
         return vehicle_info
     
@@ -353,7 +333,6 @@ class fbm_scraper():
         
         self.browser.get(link)
         
-        self.process_login_block()
         publication_data = {}
 
         publication_id = link.split("/")[5]
@@ -363,15 +342,11 @@ class fbm_scraper():
             product_price = int(self.browser.find_element(By.XPATH, PRODUCT_PRICE_XPATH).text.replace("$", "").replace(",", "").strip())
         except:
             product_price = 0
-
-        #try: # Some vehicles may have a short description, no need to click on "See more"
-        see_more = self.browser.find_elements(By.XPATH, "//*[contains(text(), 'See more')]")
-        see_more.pop(0)
-        for x in see_more:
-            self.browser.execute_script("arguments[0].click();", x)
-            time.sleep(0.5)
-        #except Exception as e:
-        #    print("SEE MORE ERROR: ", e)
+        try: # Some vehicles may have a short description, no need to click on "See more"
+            see_more = self.browser.find_element(By.XPATH, "//*[contains(text(), 'See more')]")
+            see_more.click()
+        except Exception as e:
+            None
 
         vehicle_info = self.scrap_vehicle_info()
         
@@ -413,6 +388,7 @@ class fbm_scraper():
         pass
 
 if __name__ == "__main__":
+
     with open(f"{dir_path}/input.csv", "r") as f:
         reader = csv.reader(f)
         lines = list(reader)
@@ -441,18 +417,16 @@ if __name__ == "__main__":
 
         if not os.path.exists(f"{dir_path}/images/{city_code}"):
             os.makedirs(f"{dir_path}/images/{city_code}")
-
-        headless = False
-        worker = fbm_scraper(city_code, proxy, threshold, headless, False)
+    
+        worker = fbm_scraper(city_code, proxy, threshold, True, False)
         worker.execute_scrap_process()
 
     
         for product_id, link in worker.links.items():
-            worker.print_and_log(f"{city_code} INFO: Scraping product ID {product_id}.")
+            worker.print_and_log(f"{city_code} INFO: Scraping {product_id} - {link}")
             publication = worker.scrap_link(link) 
             with open(f"{dir_path}/publications/{city_code}/{product_id}.json", "w") as f:
                 json.dump(publication, f, indent=4)
             time.sleep(0.5)
-
             
         worker.print_and_log(f"{city_code} INFO: Finished scraping {len(worker.links)} items.")
