@@ -424,9 +424,7 @@ if __name__ == "__main__":
     
         for product_id, link in worker.links.items():
             worker.print_and_log(f"{city_code} INFO: Scraping {product_id} - {link}")
-            publication = worker.scrap_link(link) 
-            with open(f"{dir_path}/publications/{city_code}/{product_id}.json", "w") as f:
-                json.dump(publication, f, indent=4)
+            worker.scrap_link(link)  # saves HTML directly
             time.sleep(0.5)
             
         worker.print_and_log(f"{city_code} INFO: Finished scraping {len(worker.links)} items.")
